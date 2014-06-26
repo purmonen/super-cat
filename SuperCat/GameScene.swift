@@ -45,7 +45,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         self.removeChildrenInArray([topTerrain, bottomTerrain])
         crashCount = 0
         updateCrashLabel()
-        makeTerrain2()
+        makeTerrain3()
     }
     
     func makeTerrain()  {
@@ -153,7 +153,76 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
             isFirst = false
         }
     }
-    
+    func makeTerrain3()  {
+        var bottomPath = CGPathCreateMutable()
+        var topPath = CGPathCreateMutable()
+        let scale = 100
+        let pointCount = scale * 2
+        var gapHeight = CGFloat(frame.height * 0.7)
+        let lineWidth = frame.width / CGFloat(pointCount - 1) * CGFloat(scale)
+        
+        CGPathMoveToPoint(bottomPath, nil, 0, 0)
+        CGPathMoveToPoint(topPath, nil, 0, self.frame.height)
+        
+        for i in 0..pointCount {
+            var currentGapHeight = gapHeight - (gapHeight * CGFloat(i) / CGFloat(pointCount))
+            //currentGapHeight = currentGapHeight + CGFloat((sin(CGFloat(i)*0.1))*50)
+            let x = CGFloat(i) * lineWidth*0.6
+            var bottomY = CGFloat((sin(CGFloat(i))+1.1)*100)//cz(Int(arc4random()) % Int(frame.height - currentGapHeight))
+            bottomY = bottomY + CGFloat((sin(CGFloat(i)*0.3)+1.1)*100)
+            CGPathAddLineToPoint(bottomPath, nil, x, bottomY)
+            
+            let topY = bottomY + currentGapHeight
+            CGPathAddLineToPoint(topPath, nil, x, topY)
+        }
+        
+        CGPathAddLineToPoint(bottomPath, nil, self.frame.width * CGFloat(scale), 0)
+        CGPathAddLineToPoint(topPath, nil, self.frame.width * CGFloat(scale), self.frame.height)
+        
+        CGPathCloseSubpath(bottomPath)
+        CGPathCloseSubpath(topPath)
+        
+        var moveLeftAction = SKAction.moveByX(-self.frame.width, y: 0, duration: 1.5)
+        var moveShapeAction = SKAction.repeatActionForever(moveLeftAction)
+        
+        var isFirst = true
+        for path in [bottomPath, topPath] {
+            
+            var node = SKShapeNode()
+            node.path = path
+            node.position = CGPointMake(0,0)
+            node.fillColor = SKColor.greenColor()
+            self.addChild(node)
+            node.physicsBody = SKPhysicsBody(edgeLoopFromPath: node.path)
+            node.physicsBody.dynamic = false
+            node.physicsBody.categoryBitMask = terrainCategory
+            node.runAction(moveShapeAction)
+            
+            if (isFirst) {
+                bottomTerrain = node
+            } else {
+                topTerrain = node
+            }
+            isFirst = false
+        }
+
+        
+        let stoneRadius :CGFloat = 50
+        var stone = SKShapeNode(circleOfRadius: stoneRadius)
+        stone.position = CGPointMake(300, 150)
+        stone.fillColor = SKColor.grayColor()
+        self.addChild(stone)
+        stone.physicsBody = SKPhysicsBody(circleOfRadius: stoneRadius)
+        stone.physicsBody.dynamic = true
+        stone.physicsBody.categoryBitMask = terrainCategory
+        stone.runAction(SKAction.repeatActionForever(SKAction.sequence([
+            SKAction.moveByX(-self.frame.width-stoneRadius*2, y: 0, duration: 1.5),
+            SKAction.runBlock({
+                stone.position=CGPointMake(self.frame.width+stoneRadius-100,CGFloat(arc4random_uniform(200)+160))
+                })
+            ])))
+        
+    }
     override func touchesBegan(touches: NSSet, withEvent event: UIEvent) {
         /* Called when a touch begins */
         
